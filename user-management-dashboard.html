@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم إدارة المستخدمين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141c;
+    --surface:#191c26;
+    --surface-2:#20232f;
+    --surface-3:#282c3a;
+    --border:#2c303e;
+    --border-soft:#22252f;
+    --text-1:#eceef3;
+    --text-2:#9298a8;
+    --text-3:#666c7e;
+    --accent:#e8a33d;
+    --accent-strong:#f0b158;
+    --accent-soft:rgba(232,163,61,.12);
+    --accent-soft-2:rgba(232,163,61,.22);
+    --danger:#e5484d;
+    --danger-soft:rgba(229,72,77,.12);
+    --success:#4cbb84;
+    --success-soft:rgba(76,187,132,.12);
+    --info:#5b8def;
+    --info-soft:rgba(91,141,239,.12);
+    --radius-s:8px;
+    --radius-m:12px;
+    --radius-l:18px;
+    --font-display:'Cairo',sans-serif;
+    --font-body:'IBM Plex Sans Arabic',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+    --shadow-pop:0 20px 50px -12px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 85% -10%, rgba(232,163,61,.07), transparent 40%),
+      var(--bg);
+    color:var(--text-1);
+    font-family:var(--font-body);
+    font-size:14.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft-2); color:var(--text-1);}
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px;}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid; grid-template-columns:1fr 260px; min-height:100vh;}
+  @media (max-width: 980px){ .shell{grid-template-columns:1fr;} }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    background:var(--surface);
+    border-inline-start:1px solid var(--border-soft);
+    padding:22px 18px;
+    display:flex; flex-direction:column; gap:26px;
+    position:sticky; top:0; height:100vh;
+  }
+  @media (max-width: 980px){
+    .sidebar{position:fixed; inset-inline-end:0; top:0; width:260px; height:100vh; z-index:60;
+      transform:translateX(102%); transition:transform .25s ease; box-shadow:var(--shadow-pop);}
+    .sidebar.open{transform:translateX(0);}
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding-inline-start:4px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent), #b97324);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; color:#1a1206; font-size:16px;
+    flex-shrink:0;
+  }
+  .brand-text{font-family:var(--font-display); font-weight:700; font-size:15.5px;}
+  .brand-sub{font-size:11px; color:var(--text-3); font-family:var(--font-mono);}
+
+  nav.nav-list{display:flex; flex-direction:column; gap:3px;}
+  .nav-group-label{font-size:11px; color:var(--text-3); padding:10px 10px 6px; letter-spacing:.03em;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-s);
+    color:var(--text-2); font-size:13.5px; font-weight:500; text-decoration:none; border:none; background:none;
+    width:100%; text-align:inherit; min-height:44px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .nav-item svg{width:18px; height:18px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--surface-2); color:var(--text-1);}
+  .nav-item.active{background:var(--accent-soft); color:var(--accent-strong); font-weight:600;}
+  .nav-item.active svg{opacity:1;}
+
+  .sidebar-footer{margin-top:auto; border-top:1px solid var(--border-soft); padding-top:14px;}
+  .user-card{display:flex; align-items:center; gap:10px; padding:8px; border-radius:var(--radius-s);}
+  .user-card:hover{background:var(--surface-2);}
+  .avatar{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12.5px; font-weight:700; font-family:var(--font-display);
+    color:#181a22;
+  }
+  .avatar-sm{width:28px; height:28px; font-size:11px;}
+  .user-card .name{font-size:13px; font-weight:600;}
+  .user-card .role{font-size:11px; color:var(--text-3);}
+
+  /* ---------- main ---------- */
+  main{padding:26px 30px 60px; min-width:0;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:26px;}
+  .menu-toggle{display:none; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-s); width:40px; height:40px; align-items:center; justify-content:center; color:var(--text-1);}
+  @media (max-width:980px){ .menu-toggle{display:flex;} }
+  .search-global{
+    flex:1; max-width:380px; position:relative;
+  }
+  .search-global input{
+    width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text-1);
+    border-radius:var(--radius-s); padding:10px 40px 10px 14px; font-size:13px; height:42px;
+  }
+  .search-global svg{position:absolute; inset-inline-end:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-3);}
+  .topbar-actions{display:flex; align-items:center; gap:10px;}
+  .icon-btn{
+    width:42px; height:42px; border-radius:var(--radius-s); background:var(--surface);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    color:var(--text-2); position:relative;
+  }
+  .icon-btn:hover{color:var(--text-1); border-color:var(--surface-3);}
+  .icon-btn svg{width:18px; height:18px;}
+  .ping{position:absolute; top:8px; inset-inline-end:9px; width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--surface);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
+  .page-head h1{font-family:var(--font-display); font-size:23px; font-weight:700;}
+  .page-head p{color:var(--text-2); font-size:13px; margin-top:4px;}
+  .head-actions{display:flex; gap:10px;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 16px;
+    border-radius:var(--radius-s); font-size:13.5px; font-weight:600; border:1px solid transparent;
+    transition:transform .1s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn svg{width:16px; height:16px;}
+  .btn-primary{background:var(--accent); color:#1c1408;}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .btn-ghost{background:var(--surface); border-color:var(--border); color:var(--text-1);}
+  .btn-ghost:hover{border-color:var(--surface-3);}
+  .btn-danger{background:var(--danger); color:#fff;}
+  .btn-danger:hover{background:#f05257;}
+  .btn-danger[disabled]{background:var(--surface-3); color:var(--text-3); cursor:not-allowed;}
+  .btn-sm{height:36px; padding:0 12px; font-size:12.5px;}
+
+  /* stat cards */
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  @media (max-width:820px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+  .stat-card{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m); padding:16px 18px;}
+  .stat-card .label{font-size:12px; color:var(--text-2); display:flex; align-items:center; gap:6px;}
+  .stat-card .value{font-family:var(--font-display); font-size:26px; font-weight:700; margin-top:8px;}
+  .stat-dot{width:7px; height:7px; border-radius:50%;}
+
+  /* filter bar */
+  .filter-bar{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m);
+    padding:14px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;
+  }
+  .filter-bar .search-box{position:relative; flex:1; min-width:200px;}
+  .filter-bar .search-box input{width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text-1); border-radius:var(--radius-s); height:42px; padding:0 40px 0 14px; font-size:13px;}
+  .filter-bar .search-box svg{position:absolute; inset-inline-end:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-3);}
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .chip{
+    height:42px; padding:0 14px; border-radius:var(--radius-s); background:var(--surface-2); border:1px solid var(--border);
+    color:var(--text-2); font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:6px;
+  }
+  .chip.active{background:var(--accent-soft); border-color:var(--accent-soft-2); color:var(--accent-strong);}
+  .adv-toggle{
+    height:42px; padding:0 14px; border-radius:var(--radius-s); background:var(--surface-2); border:1px solid var(--border);
+    color:var(--text-1); font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:8px;
+  }
+  .adv-toggle svg{width:15px; height:15px;}
+  .adv-toggle .count{background:var(--accent); color:#1c1408; font-size:10.5px; font-weight:800; border-radius:999px; width:18px; height:18px; display:flex; align-items:center; justify-content:center;}
+
+  .adv-panel{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m);
+    padding:18px; margin-bottom:14px; display:none; grid-template-columns:repeat(4,1fr); gap:14px;
+  }
+  .adv-panel.open{display:grid;}
+  @media (max-width:900px){ .adv-panel{grid-template-columns:repeat(2,1fr);} }
+  .field label{display:block; font-size:11.5px; color:var(--text-3); margin-bottom:6px; font-weight:600;}
+  .field select, .field input{
+    width:100%; height:40px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-s);
+    color:var(--text-1); padding:0 12px; font-size:13px;
+  }
+  .adv-panel .adv-actions{grid-column:1 / -1; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border-soft); padding-top:14px;}
+
+  /* bulk bar */
+  .bulk-bar{
+    display:none; align-items:center; justify-content:space-between; gap:12px;
+    background:linear-gradient(180deg, var(--surface-2), var(--surface));
+    border:1px solid var(--accent-soft-2); border-radius:var(--radius-m); padding:12px 16px; margin-bottom:14px;
+    animation:slideIn .18s ease;
+  }
+  .bulk-bar.show{display:flex; flex-wrap:wrap;}
+  @keyframes slideIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
+  .bulk-left{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .bulk-left .num{color:var(--accent-strong); font-family:var(--font-mono);}
+  .bulk-actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* table */
+  .table-wrap{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m); overflow:hidden;}
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    text-align:right; font-size:11.5px; color:var(--text-3); font-weight:600; padding:13px 14px;
+    border-bottom:1px solid var(--border-soft); background:var(--surface-2); white-space:nowrap;
+  }
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--border-soft); font-size:13px; vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{transition:background .12s ease;}
+  tbody tr:hover{background:var(--surface-2);}
+  tbody tr.selected{background:var(--accent-soft);}
+  .cb{width:17px; height:17px; accent-color:var(--accent); cursor:pointer;}
+  .user-cell{display:flex; align-items:center; gap:10px;}
+  .user-cell .u-name{font-weight:600; font-size:13.5px;}
+  .user-cell .u-mail{font-size:11.5px; color:var(--text-3); font-family:var(--font-mono);}
+
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:600;}
+  .badge-role-super{background:var(--accent-soft); color:var(--accent-strong);}
+  .badge-role-admin{background:var(--info-soft); color:var(--info);}
+  .badge-role-editor{background:rgba(155,140,255,.14); color:#b3a6ff;}
+  .badge-role-support{background:rgba(255,255,255,.06); color:var(--text-2);}
+  .badge-role-member{background:var(--surface-3); color:var(--text-2);}
+  .status-dot{width:7px; height:7px; border-radius:50%; display:inline-block;}
+  .status-active{color:var(--success);}
+  .status-pending{color:var(--accent-strong);}
+  .status-suspended{color:var(--danger);}
+  .status-wrap{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600;}
+
+  .row-actions{position:relative;}
+  .kebab{width:32px; height:32px; border-radius:8px; background:transparent; border:1px solid transparent; color:var(--text-2); display:flex; align-items:center; justify-content:center;}
+  .kebab:hover{background:var(--surface-3); color:var(--text-1);}
+  .menu-pop{
+    position:absolute; inset-inline-end:0; top:38px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-s); box-shadow:var(--shadow-pop); min-width:170px; z-index:40; display:none; overflow:hidden;
+  }
+  .menu-pop.open{display:block;}
+  .menu-pop button{
+    width:100%; text-align:inherit; padding:10px 14px; background:none; border:none; color:var(--text-1);
+    font-size:12.5px; display:flex; align-items:center; gap:8px;
+  }
+  .menu-pop button:hover{background:var(--surface-3);}
+  .menu-pop button.danger{color:var(--danger);}
+  .menu-pop button svg{width:14px; height:14px;}
+
+  .table-footer{display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-3); flex-wrap:wrap; gap:10px;}
+  .pager{display:flex; align-items:center; gap:6px;}
+  .pager button{width:32px; height:32px; border-radius:8px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2); display:flex; align-items:center; justify-content:center;}
+  .pager button.active{background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent-soft-2); font-weight:700;}
+  .pager button svg{width:15px; height:15px;}
+
+  /* ---------- Roles & permissions ---------- */
+  .roles-grid{display:grid; grid-template-columns:300px 1fr; gap:18px; align-items:flex-start;}
+  @media (max-width:900px){ .roles-grid{grid-template-columns:1fr;} }
+  .role-list{display:flex; flex-direction:column; gap:8px;}
+  .role-card{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m); padding:14px;
+    cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  }
+  .role-card:hover{border-color:var(--surface-3);}
+  .role-card.selected{border-color:var(--accent-soft-2); background:var(--accent-soft);}
+  .role-card .rc-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .role-card .rc-name{font-weight:700; font-size:13.5px; font-family:var(--font-display);}
+  .role-card .rc-count{font-size:11px; color:var(--text-3); font-family:var(--font-mono);}
+  .role-card .rc-desc{font-size:12px; color:var(--text-2); margin-top:5px; line-height:1.5;}
+  .new-role-btn{width:100%; margin-bottom:6px;}
+
+  .matrix-panel{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-m); overflow:hidden;}
+  .matrix-head{display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:18px 20px; border-bottom:1px solid var(--border-soft); flex-wrap:wrap;}
+  .matrix-head h2{font-family:var(--font-display); font-size:18px; font-weight:700;}
+  .matrix-head .desc{color:var(--text-2); font-size:12.5px; margin-top:4px; max-width:480px;}
+  .matrix-body{padding:6px 4px 16px;}
+
+  .perm-group{padding:14px 20px 6px;}
+  .perm-group-title{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--text-3); letter-spacing:.03em; margin-bottom:6px; padding-inline-start:2px;}
+  .perm-row{
+    display:flex; align-items:center; gap:14px; padding:11px 14px 11px 6px; border-radius:var(--radius-s);
+    position:relative;
+  }
+  .perm-row::before{
+    content:''; position:absolute; inset-inline-start:12px; top:0; bottom:0; width:1px; background:var(--border);
+  }
+  .perm-row.on::before{background:var(--accent-soft-2);}
+  .perm-row:hover{background:var(--surface-2);}
+  .perm-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--surface-3); flex-shrink:0; margin-inline-start:8px;
+    box-shadow:0 0 0 3px var(--surface); position:relative; z-index:1;
+  }
+  .perm-row.on .perm-dot{background:var(--accent); box-shadow:0 0 0 3px var(--surface), 0 0 8px 1px var(--accent-soft-2);}
+  .perm-info{flex:1; min-width:0;}
+  .perm-label{font-size:13px; font-weight:600;}
+  .perm-code{font-family:var(--font-mono); font-size:10.5px; color:var(--text-3); margin-inline-start:8px;}
+  .perm-desc{font-size:11.5px; color:var(--text-3); margin-top:2px;}
+  .perm-sensitive{background:var(--danger-soft); color:#ff8b8e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; margin-inline-start:6px;}
+
+  .switch{position:relative; width:42px; height:24px; flex-shrink:0;}
+  .switch input{opacity:0; width:100%; height:100%; position:absolute; cursor:pointer; margin:0; z-index:2;}
+  .switch .track{position:absolute; inset:0; background:var(--surface-3); border-radius:999px; transition:background .15s ease; border:1px solid var(--border);}
+  .switch .thumb{position:absolute; top:3px; inset-inline-start:3px; width:16px; height:16px; border-radius:50%; background:var(--text-2); transition:all .18s ease;}
+  .switch input:checked + .track{background:var(--accent-soft-2); border-color:var(--accent);}
+  .switch input:checked + .track + .thumb{inset-inline-start:21px; background:var(--accent);}
+  .switch input:focus-visible + .track{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .matrix-foot{display:flex; justify-content:flex-end; gap:10px; padding:16px 20px; border-top:1px solid var(--border-soft);}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(8,9,13,.7); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-l);
+    width:100%; max-width:440px; box-shadow:var(--shadow-pop); animation:pop .16s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:scale(.97) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);}}
+  .modal-icon{
+    width:46px; height:46px; border-radius:12px; background:var(--danger-soft); color:var(--danger);
+    display:flex; align-items:center; justify-content:center; margin:22px 22px 0;
+  }
+  .modal-icon svg{width:22px; height:22px;}
+  .modal-body{padding:16px 22px 22px;}
+  .modal-body h3{font-family:var(--font-display); font-size:17px; font-weight:700; margin-bottom:8px;}
+  .modal-body p{font-size:13px; color:var(--text-2); line-height:1.7;}
+  .modal-body .confirm-input{
+    margin-top:14px; width:100%; height:42px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-s); padding:0 12px; color:var(--text-1); font-size:13px;
+  }
+  .modal-body .hint{font-size:11.5px; color:var(--text-3); margin-top:6px;}
+  .modal-footer{display:flex; gap:10px; padding:16px 22px 22px; justify-content:flex-end;}
+
+  /* toast */
+  .toast-stack{position:fixed; bottom:20px; inset-inline-end:20px; display:flex; flex-direction:column; gap:8px; z-index:200;}
+  .toast{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-s);
+    padding:12px 16px; font-size:13px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow-pop);
+    animation:toastIn .2s ease; min-width:240px;
+  }
+  @keyframes toastIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .toast .dot{width:8px; height:8px; border-radius:50%; background:var(--success); flex-shrink:0;}
+  .toast.danger .dot{background:var(--danger);}
+
+  .empty-state{padding:60px 20px; text-align:center; color:var(--text-3);}
+  .empty-state svg{width:38px; height:38px; margin-bottom:12px; opacity:.5;}
+  .empty-state p{font-size:13px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <main>
+    <div class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="search-global">
+        <input type="text" placeholder="بحث سريع في كل النظام...">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" aria-label="الإشعارات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+          <span class="ping"></span>
+        </button>
+        <div class="user-card" style="padding-inline-start:0;">
+          <div class="avatar avatar-sm" style="background:var(--accent);">هس</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ USERS VIEW ============ -->
+    <section class="view active" id="view-users">
+      <div class="page-head">
+        <div>
+          <h1>إدارة المستخدمين</h1>
+          <p>عرض وتنظيم جميع حسابات المستخدمين في المؤسسة</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+            تصدير
+          </button>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            إضافة مستخدم
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="label"><span class="stat-dot" style="background:var(--text-2)"></span> إجمالي المستخدمين</div>
+          <div class="value" id="statTotal">24</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span class="stat-dot" style="background:var(--success)"></span> نشط</div>
+          <div class="value" id="statActive">18</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span class="stat-dot" style="background:var(--accent)"></span> بانتظار التفعيل</div>
+          <div class="value" id="statPending">4</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span class="stat-dot" style="background:var(--danger)"></span> موقوف</div>
+          <div class="value" id="statSuspended">2</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="ابحث بالاسم أو البريد الإلكتروني...">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </div>
+        <div class="chip-row" id="statusChips">
+          <button class="chip active" data-status="all">الكل</button>
+          <button class="chip" data-status="active">نشط</button>
+          <button class="chip" data-status="pending">معلّق</button>
+          <button class="chip" data-status="suspended">موقوف</button>
+        </div>
+        <button class="adv-toggle" id="advToggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          فلترة متقدمة
+          <span class="count" id="advCount" style="display:none;">0</span>
+        </button>
+      </div>
+
+      <div class="adv-panel" id="advPanel">
+        <div class="field">
+          <label for="fRole">الدور</label>
+          <select id="fRole">
+            <option value="all">كل الأدوار</option>
+            <option value="super">مدير النظام</option>
+            <option value="admin">مشرف</option>
+            <option value="editor">محرر محتوى</option>
+            <option value="support">دعم فني</option>
+            <option value="member">مستخدم عادي</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fDept">القسم</label>
+          <select id="fDept">
+            <option value="all">كل الأقسام</option>
+            <option value="تقنية المعلومات">تقنية المعلومات</option>
+            <option value="التسويق">التسويق</option>
+            <option value="المبيعات">المبيعات</option>
+            <option value="الدعم الفني">الدعم الفني</option>
+            <option value="الموارد البشرية">الموارد البشرية</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fJoined">تاريخ الانضمام بعد</label>
+          <input type="date" id="fJoined">
+        </div>
+        <div class="field">
+          <label for="fSort">ترتيب حسب</label>
+          <select id="fSort">
+            <option value="name-asc">الاسم (أ-ي)</option>
+            <option value="joined-desc">الأحدث انضمامًا</option>
+            <option value="joined-asc">الأقدم انضمامًا</option>
+            <option value="active-desc">آخر نشاط</option>
+          </select>
+        </div>
+        <div class="adv-actions">
+          <button class="btn btn-ghost btn-sm" id="clearFilters">مسح الفلاتر</button>
+          <button class="btn btn-primary btn-sm" id="applyFilters">تطبيق الفلاتر</button>
+        </div>
+      </div>
+
+      <div class="bulk-bar" id="bulkBar">
+        <div class="bulk-left">
+          <span><span class="num" id="bulkCount">0</span> عنصر محدد</span>
+          <button class="btn btn-ghost btn-sm" id="clearSelection">إلغاء التحديد</button>
+        </div>
+        <div class="bulk-actions">
+          <button class="btn btn-ghost btn-sm" id="bulkActivate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M20 6L9 17l-5-5"/></svg>
+            تفعيل
+          </button>
+          <button class="btn btn-ghost btn-sm" id="bulkSuspend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+            تعليق
+          </button>
+          <button class="btn btn-ghost btn-sm" id="bulkRole">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            تغيير الدور
+          </button>
+          <button class="btn btn-danger btn-sm" id="bulkDelete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>
+            حذف
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:38px;"><input type="checkbox" class="cb" id="selectAll" aria-label="تحديد الكل"></th>
+              <th>المستخدم</th>
+              <th>الدور</th>
+              <th>الحالة</th>
+              <th>القسم</th>
+              <th>آخر نشاط</th>
+              <th>تاريخ الانضمام</th>
+              <th style="width:44px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="table-footer">
+          <span id="rangeLabel">عرض 1–8 من 24</span>
+          <div class="pager" id="pager"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ROLES & PERMISSIONS VIEW ============ -->
+    <section class="view" id="view-roles">
+      <div class="page-head">
+        <div>
+          <h1>الأدوار والصلاحيات</h1>
+          <p>تحكّم بدقة فيما يمكن لكل دور الوصول إليه أو تعديله</p>
+        </div>
+      </div>
+
+      <div class="roles-grid">
+        <div>
+          <button class="btn btn-ghost new-role-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            دور جديد
+          </button>
+          <div class="role-list" id="roleList"></div>
+        </div>
+
+        <div class="matrix-panel">
+          <div class="matrix-head">
+            <div>
+              <h2 id="matrixTitle">مدير النظام</h2>
+              <p class="desc" id="matrixDesc">وصول كامل لجميع أجزاء النظام دون قيود، بما في ذلك الإعدادات الحساسة والفوترة.</p>
+            </div>
+          </div>
+          <div class="matrix-body" id="matrixBody"></div>
+          <div class="matrix-foot">
+            <button class="btn btn-ghost btn-sm" id="resetRole">استعادة الافتراضي</button>
+            <button class="btn btn-primary btn-sm" id="saveRole">حفظ التغييرات</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">ن</div>
+      <div>
+        <div class="brand-text">نظام الإدارة</div>
+        <div class="brand-sub">v2.4.0</div>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <span class="nav-group-label">عام</span>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+        الرئيسية
+      </button>
+      <span class="nav-group-label">الوصول</span>
+      <button class="nav-item active" data-view="view-users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        المستخدمون
+      </button>
+      <button class="nav-item" data-view="view-roles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+        الأدوار والصلاحيات
+      </button>
+      <span class="nav-group-label">أخرى</span>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        التقارير
+      </button>
+      <button class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21a2 2 0 11-4 0v-.2a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.6-1H3a2 2 0 110-4h.2a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.6V3a2 2 0 114 0v.2a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.6 1H21a2 2 0 110 4h-.2a1.7 1.7 0 00-1.6 1z"/></svg>
+        الإعدادات
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:var(--info);">يح</div>
+        <div>
+          <div class="name">يحيى حسن</div>
+          <div class="role">مدير النظام</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="overlay" id="deleteOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delTitle">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    </div>
+    <div class="modal-body">
+      <h3 id="delTitle">حذف المستخدم؟</h3>
+      <p id="delBody">سيتم حذف هذا الحساب نهائيًا وفقدان جميع بياناته المرتبطة. لا يمكن التراجع عن هذا الإجراء.</p>
+      <div id="confirmWrap" style="display:none;">
+        <input type="text" class="confirm-input" id="confirmInput" placeholder="اكتب «حذف» للتأكيد">
+        <div class="hint">لأن هذا إجراء جماعي، يرجى كتابة كلمة «حذف» لتفعيل الزر.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelDelete">إلغاء</button>
+      <button class="btn btn-danger" id="confirmDelete">حذف نهائي</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+(function(){
+  /* ---------------- data ---------------- */
+  const roleMeta = {
+    super:{label:'مدير النظام', badge:'badge-role-super'},
+    admin:{label:'مشرف', badge:'badge-role-admin'},
+    editor:{label:'محرر محتوى', badge:'badge-role-editor'},
+    support:{label:'دعم فني', badge:'badge-role-support'},
+    member:{label:'مستخدم عادي', badge:'badge-role-member'},
+  };
+  const statusMeta = {
+    active:{label:'نشط', cls:'status-active'},
+    pending:{label:'معلّق', cls:'status-pending'},
+    suspended:{label:'موقوف', cls:'status-suspended'},
+  };
+  const depts = ['تقنية المعلومات','التسويق','المبيعات','الدعم الفني','الموارد البشرية'];
+  const firstNames = ['سارة','أحمد','ليلى','محمد','نور','خالد','هبة','عمر','ريم','يوسف','دينا','طارق','منى','كريم','آية','حسام','سلمى','باسم','رنا','فادي','مروة','أنس','جنى','زياد'];
+  const lastNames = ['العتيبي','الحمد','منصور','السيد','فاروق','عبد الله','الحربي','نجم','شريف','قاسم'];
+  const colors = ['#e8a33d','#5b8def','#4cbb84','#b3a6ff','#e5484d','#5fd0d9'];
+
+  function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return d; }
+  function fmtDate(d){ return d.toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}); }
+  function fmtRelative(n){
+    if(n===0) return 'اليوم';
+    if(n===1) return 'أمس';
+    if(n<7) return `منذ ${n} أيام`;
+    if(n<30) return `منذ ${Math.floor(n/7)} أسابيع`;
+    return `منذ ${Math.floor(n/30)} أشهر`;
+  }
+
+  const roleKeys = ['super','admin','editor','support','member'];
+  const statusKeys = ['active','active','active','pending','suspended'];
+
+  let users = [];
+  for(let i=0;i<24;i++){
+    const fn = firstNames[i], ln = rnd(lastNames);
+    const role = i===0 ? 'super' : rnd(roleKeys);
+    const status = i<2 ? 'active' : rnd(statusKeys);
+    const joinedDays = 20 + i*11 + Math.floor(Math.random()*10);
+    const activeDays = Math.floor(Math.random()*20);
+    users.push({
+      id:'usr_'+(1000+i),
+      name:`${fn} ${ln}`,
+      email:`${fn}.${ln}`.toLowerCase().replace(/\s/g,'')+'@company.com',
+      role, status,
+      dept: rnd(depts),
+      joined: daysAgo(joinedDays),
+      lastActive: activeDays,
+      color: colors[i % colors.length],
+    });
+  }
+
+  let selectedIds = new Set();
+  let currentPage = 1;
+  const pageSize = 8;
+  let filters = {search:'', status:'all', role:'all', dept:'all', joinedAfter:'', sort:'name-asc'};
+
+  /* ---------------- rendering: users table ---------------- */
+  function initials(name){
+    const parts = name.split(' ');
+    return (parts[0][0]||'') + (parts[1] ? parts[1][0] : '');
+  }
+
+  function applyFiltersAndSort(){
+    let list = users.filter(u=>{
+      if(filters.search){
+        const q = filters.search.toLowerCase();
+        if(!u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
+      }
+      if(filters.status !== 'all' && u.status !== filters.status) return false;
+      if(filters.role !== 'all' && u.role !== filters.role) return false;
+      if(filters.dept !== 'all' && u.dept !== filters.dept) return false;
+      if(filters.joinedAfter){
+        const cutoff = new Date(filters.joinedAfter);
+        if(u.joined < cutoff) return false;
+      }
+      return true;
+    });
+    list.sort((a,b)=>{
+      switch(filters.sort){
+        case 'joined-desc': return b.joined - a.joined;
+        case 'joined-asc': return a.joined - b.joined;
+        case 'active-desc': return a.lastActive - b.lastActive;
+        default: return a.name.localeCompare(b.name,'ar');
+      }
+    });
+    return list;
+  }
+
+  function renderTable(){
+    const filtered = applyFiltersAndSort();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if(currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage-1)*pageSize;
+    const pageItems = filtered.slice(start, start+pageSize);
+
+    const tbody = document.getElementById('tbody');
+    if(pageItems.length === 0){
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <p>لا توجد نتائج تطابق الفلاتر الحالية</p>
+      </div></td></tr>`;
+    } else {
+      tbody.innerHTML = pageItems.map(u => {
+        const rm = roleMeta[u.role], sm = statusMeta[u.status];
+        const checked = selectedIds.has(u.id) ? 'checked' : '';
+        const rowSel = selectedIds.has(u.id) ? 'selected' : '';
+        return `<tr class="${rowSel}" data-id="${u.id}">
+          <td><input type="checkbox" class="cb row-cb" data-id="${u.id}" ${checked} aria-label="تحديد ${u.name}"></td>
+          <td>
+            <div class="user-cell">
+              <div class="avatar avatar-sm" style="background:${u.color};">${initials(u.name)}</div>
+              <div>
+                <div class="u-name">${u.name}</div>
+                <div class="u-mail">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge ${rm.badge}">${rm.label}</span></td>
+          <td><span class="status-wrap"><span class="status-dot ${sm.cls}" style="background:currentColor;"></span>${sm.label}</span></td>
+          <td>${u.dept}</td>
+          <td>${fmtRelative(u.lastActive)}</td>
+          <td>${fmtDate(u.joined)}</td>
+          <td class="row-actions">
+            <button class="kebab" data-menu="${u.id}" aria-label="مزيد من الإجراءات">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </button>
+            <div class="menu-pop" id="menu-${u.id}">
+              <button data-action="edit" data-id="${u.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+                تعديل البيانات
+              </button>
+              <button data-action="perm" data-id="${u.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+                عرض الصلاحيات
+              </button>
+              <button class="danger" data-action="delete" data-id="${u.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>
+                حذف المستخدم
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    const rangeLabel = document.getElementById('rangeLabel');
+    rangeLabel.textContent = filtered.length === 0
+      ? 'لا توجد نتائج'
+      : `عرض ${start+1}–${Math.min(start+pageSize, filtered.length)} من ${filtered.length}`;
+
+    renderPager(totalPages);
+    updateSelectAllState(pageItems);
+    updateBulkBar();
+    updateStats();
+  }
+
+  function renderPager(totalPages){
+    const pager = document.getElementById('pager');
+    let html = `<button data-page="prev" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>`;
+    for(let p=1;p<=totalPages;p++){
+      html += `<button data-page="${p}" class="${p===currentPage?'active':''}">${p}</button>`;
+    }
+    html += `<button data-page="next" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`;
+    pager.innerHTML = html;
+  }
+
+  function updateSelectAllState(pageItems){
+    const selectAll = document.getElementById('selectAll');
+    if(pageItems.length===0){ selectAll.checked=false; selectAll.indeterminate=false; return; }
+    const allSel = pageItems.every(u => selectedIds.has(u.id));
+    const anySel = pageItems.some(u => selectedIds.has(u.id));
+    selectAll.checked = allSel;
+    selectAll.indeterminate = anySel && !allSel;
+  }
+
+  function updateBulkBar(){
+    const bar = document.getElementById('bulkBar');
+    const count = selectedIds.size;
+    document.getElementById('bulkCount').textContent = count;
+    bar.classList.toggle('show', count>0);
+  }
+
+  function updateStats(){
+    document.getElementById('statTotal').textContent = users.length;
+    document.getElementById('statActive').textContent = users.filter(u=>u.status==='active').length;
+    document.getElementById('statPending').textContent = users.filter(u=>u.status==='pending').length;
+    document.getElementById('statSuspended').textContent = users.filter(u=>u.status==='suspended').length;
+  }
+
+  /* ---------------- events: table ---------------- */
+  document.getElementById('tbody').addEventListener('change', e=>{
+    if(e.target.classList.contains('row-cb')){
+      const id = e.target.dataset.id;
+      if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+      renderTable();
+    }
+  });
+
+  document.getElementById('selectAll').addEventListener('change', e=>{
+    const filtered = applyFiltersAndSort();
+    const start = (currentPage-1)*pageSize;
+    const pageItems = filtered.slice(start, start+pageSize);
+    if(e.target.checked){ pageItems.forEach(u=>selectedIds.add(u.id)); }
+    else { pageItems.forEach(u=>selectedIds.delete(u.id)); }
+    renderTable();
+  });
+
+  document.getElementById('clearSelection').addEventListener('click', ()=>{
+    selectedIds.clear();
+    renderTable();
+  });
+
+  document.getElementById('tbody').addEventListener('click', e=>{
+    const kebab = e.target.closest('.kebab');
+    if(kebab){
+      document.querySelectorAll('.menu-pop.open').forEach(m=>{ if(m.id !== 'menu-'+kebab.dataset.menu) m.classList.remove('open'); });
+      document.getElementById('menu-'+kebab.dataset.menu).classList.toggle('open');
+      return;
+    }
+    const actionBtn = e.target.closest('[data-action]');
+    if(actionBtn){
+      const id = actionBtn.dataset.id;
+      const action = actionBtn.dataset.action;
+      document.querySelectorAll('.menu-pop.open').forEach(m=>m.classList.remove('open'));
+      const u = users.find(x=>x.id===id);
+      if(action==='delete') openDeleteModal([u]);
+      else if(action==='edit') showToast(`فتح تعديل بيانات ${u.name}`);
+      else if(action==='perm') showToast(`عرض صلاحيات دور «${roleMeta[u.role].label}»`);
+    }
+  });
+
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('.row-actions')){
+      document.querySelectorAll('.menu-pop.open').forEach(m=>m.classList.remove('open'));
+    }
+  });
+
+  document.getElementById('pager').addEventListener('click', e=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const p = btn.dataset.page;
+    const filtered = applyFiltersAndSort();
+    const totalPages = Math.max(1, Math.ceil(filtered.length/pageSize));
+    if(p==='prev') currentPage = Math.max(1, currentPage-1);
+    else if(p==='next') currentPage = Math.min(totalPages, currentPage+1);
+    else currentPage = parseInt(p);
+    renderTable();
+  });
+
+  /* ---------------- filters ---------------- */
+  document.getElementById('searchInput').addEventListener('input', e=>{
+    filters.search = e.target.value;
+    currentPage = 1;
+    renderTable();
+  });
+
+  document.getElementById('statusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    filters.status = chip.dataset.status;
+    currentPage = 1;
+    renderTable();
+  });
+
+  const advPanel = document.getElementById('advPanel');
+  document.getElementById('advToggle').addEventListener('click', ()=>{
+    advPanel.classList.toggle('open');
+  });
+
+  function countActiveAdvFilters(){
+    let n = 0;
+    if(filters.role !== 'all') n++;
+    if(filters.dept !== 'all') n++;
+    if(filters.joinedAfter) n++;
+    return n;
+  }
+  function refreshAdvBadge(){
+    const n = countActiveAdvFilters();
+    const badge = document.getElementById('advCount');
+    badge.style.display = n>0 ? 'flex' : 'none';
+    badge.textContent = n;
+  }
+
+  document.getElementById('applyFilters').addEventListener('click', ()=>{
+    filters.role = document.getElementById('fRole').value;
+    filters.dept = document.getElementById('fDept').value;
+    filters.joinedAfter = document.getElementById('fJoined').value;
+    filters.sort = document.getElementById('fSort').value;
+    currentPage = 1;
+    refreshAdvBadge();
+    renderTable();
+    advPanel.classList.remove('open');
+    showToast('تم تطبيق الفلاتر');
+  });
+
+  document.getElementById('clearFilters').addEventListener('click', ()=>{
+    document.getElementById('fRole').value='all';
+    document.getElementById('fDept').value='all';
+    document.getElementById('fJoined').value='';
+    document.getElementById('fSort').value='name-asc';
+    filters.role='all'; filters.dept='all'; filters.joinedAfter=''; filters.sort='name-asc';
+    currentPage = 1;
+    refreshAdvBadge();
+    renderTable();
+  });
+
+  /* ---------------- bulk actions ---------------- */
+  document.getElementById('bulkActivate').addEventListener('click', ()=>{
+    users.forEach(u=>{ if(selectedIds.has(u.id)) u.status='active'; });
+    showToast(`تم تفعيل ${selectedIds.size} مستخدم`);
+    selectedIds.clear();
+    renderTable();
+  });
+  document.getElementById('bulkSuspend').addEventListener('click', ()=>{
+    users.forEach(u=>{ if(selectedIds.has(u.id)) u.status='suspended'; });
+    showToast(`تم تعليق ${selectedIds.size} مستخدم`, true);
+    selectedIds.clear();
+    renderTable();
+  });
+  document.getElementById('bulkRole').addEventListener('click', ()=>{
+    showToast(`فتح نافذة تغيير الدور لـ ${selectedIds.size} مستخدم`);
+  });
+  document.getElementById('bulkDelete').addEventListener('click', ()=>{
+    const list = users.filter(u=>selectedIds.has(u.id));
+    openDeleteModal(list);
+  });
+
+  /* ---------------- delete modal ---------------- */
+  let pendingDeleteIds = [];
+  const overlay = document.getElementById('deleteOverlay');
+  const confirmWrap = document.getElementById('confirmWrap');
+  const confirmInput = document.getElementById('confirmInput');
+  const confirmBtn = document.getElementById('confirmDelete');
+
+  function openDeleteModal(list){
+    pendingDeleteIds = list.map(u=>u.id);
+    const title = document.getElementById('delTitle');
+    const body = document.getElementById('delBody');
+    if(list.length === 1){
+      title.textContent = 'حذف المستخدم؟';
+      body.textContent = `سيتم حذف حساب "${list[0].name}" نهائيًا وفقدان جميع بياناته المرتبطة. لا يمكن التراجع عن هذا الإجراء.`;
+    } else {
+      title.textContent = `حذف ${list.length} مستخدمين؟`;
+      body.textContent = `سيتم حذف ${list.length} حسابات نهائيًا وفقدان جميع بياناتها المرتبطة، بما فيها الصلاحيات والسجلات. لا يمكن التراجع عن هذا الإجراء.`;
+    }
+    const needsTyped = list.length >= 3;
+    confirmWrap.style.display = needsTyped ? 'block' : 'none';
+    confirmInput.value = '';
+    confirmBtn.disabled = needsTyped;
+    overlay.classList.add('open');
+  }
+
+  confirmInput.addEventListener('input', ()=>{
+    confirmBtn.disabled = confirmInput.value.trim() !== 'حذف';
+  });
+
+  document.getElementById('cancelDelete').addEventListener('click', ()=>{
+    overlay.classList.remove('open');
+  });
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') overlay.classList.remove('open'); });
+
+  confirmBtn.addEventListener('click', ()=>{
+    if(confirmBtn.disabled) return;
+    const n = pendingDeleteIds.length;
+    users = users.filter(u => !pendingDeleteIds.includes(u.id));
+    pendingDeleteIds.forEach(id=>selectedIds.delete(id));
+    overlay.classList.remove('open');
+    showToast(n===1 ? 'تم حذف المستخدم بنجاح' : `تم حذف ${n} مستخدمين بنجاح`, true);
+    renderTable();
+  });
+
+  /* ---------------- toast ---------------- */
+  function showToast(msg, danger){
+    const stack = document.getElementById('toastStack');
+    const t = document.createElement('div');
+    t.className = 'toast' + (danger ? ' danger' : '');
+    t.innerHTML = `<span class="dot"></span><span>${msg}</span>`;
+    stack.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3200);
+  }
+
+  /* ---------------- roles & permissions ---------------- */
+  const rolesData = {
+    super:{
+      name:'مدير النظام', users:2,
+      desc:'وصول كامل لجميع أجزاء النظام دون قيود، بما في ذلك الإعدادات الحساسة والفوترة.',
+      groups:[
+        {title:'المستخدمون', perms:[
+          {code:'users.view', label:'عرض المستخدمين', desc:'الاطلاع على قائمة المستخدمين وبياناتهم', on:true},
+          {code:'users.create', label:'إضافة مستخدمين', desc:'إنشاء حسابات جديدة ودعوتها', on:true},
+          {code:'users.edit', label:'تعديل بيانات المستخدمين', desc:'تحديث الأدوار، الأقسام، والحالة', on:true},
+          {code:'users.delete', label:'حذف المستخدمين', desc:'إزالة الحسابات نهائيًا من النظام', on:true, sensitive:true},
+        ]},
+        {title:'المحتوى', perms:[
+          {code:'content.publish', label:'نشر المحتوى', desc:'نشر أو إلغاء نشر أي عنصر محتوى', on:true},
+          {code:'content.edit', label:'تعديل المحتوى', desc:'تحرير المقالات والصفحات', on:true},
+        ]},
+        {title:'النظام', perms:[
+          {code:'system.settings', label:'إعدادات النظام', desc:'تعديل الإعدادات العامة والتكاملات', on:true, sensitive:true},
+          {code:'system.billing', label:'الفوترة والاشتراك', desc:'إدارة الفواتير وطرق الدفع', on:true, sensitive:true},
+        ]},
+      ]
+    },
+    admin:{
+      name:'مشرف', users:5,
+      desc:'إدارة المستخدمين والمحتوى دون الوصول إلى الفوترة أو الإعدادات الحساسة.',
+      groups:[
+        {title:'المستخدمون', perms:[
+          {code:'users.view', label:'عرض المستخدمين', desc:'الاطلاع على قائمة المستخدمين وبياناتهم', on:true},
+          {code:'users.create', label:'إضافة مستخدمين', desc:'إنشاء حسابات جديدة ودعوتها', on:true},
+          {code:'users.edit', label:'تعديل بيانات المستخدمين', desc:'تحديث الأدوار، الأقسام، والحالة', on:true},
+          {code:'users.delete', label:'حذف المستخدمين', desc:'إزالة الحسابات نهائيًا من النظام', on:false, sensitive:true},
+        ]},
+        {title:'المحتوى', perms:[
+          {code:'content.publish', label:'نشر المحتوى', desc:'نشر أو إلغاء نشر أي عنصر محتوى', on:true},
+          {code:'content.edit', label:'تعديل المحتوى', desc:'تحرير المقالات والصفحات', on:true},
+        ]},
+        {title:'النظام', perms:[
+          {code:'system.settings', label:'إعدادات النظام', desc:'تعديل الإعدادات العامة والتكاملات', on:false, sensitive:true},
+          {code:'system.billing', label:'الفوترة والاشتراك', desc:'إدارة الفواتير وطرق الدفع', on:false, sensitive:true},
+        ]},
+      ]
+    },
+    editor:{
+      name:'محرر محتوى', users:8,
+      desc:'التركيز على إنشاء وتحرير المحتوى دون صلاحيات إدارية على المستخدمين.',
+      groups:[
+        {title:'المستخدمون', perms:[
+          {code:'users.view', label:'عرض المستخدمين', desc:'الاطلاع على قائمة المستخدمين وبياناتهم', on:true},
+          {code:'users.create', label:'إضافة مستخدمين', desc:'إنشاء حسابات جديدة ودعوتها', on:false},
+          {code:'users.edit', label:'تعديل بيانات المستخدمين', desc:'تحديث الأدوار، الأقسام، والحالة', on:false},
+          {code:'users.delete', label:'حذف المستخدمين', desc:'إزالة الحسابات نهائيًا من النظام', on:false, sensitive:true},
+        ]},
+        {title:'المحتوى', perms:[
+          {code:'content.publish', label:'نشر المحتوى', desc:'نشر أو إلغاء نشر أي عنصر محتوى', on:true},
+          {code:'content.edit', label:'تعديل المحتوى', desc:'تحرير المقالات والصفحات', on:true},
+        ]},
+        {title:'النظام', perms:[
+          {code:'system.settings', label:'إعدادات النظام', desc:'تعديل الإعدادات العامة والتكاملات', on:false, sensitive:true},
+          {code:'system.billing', label:'الفوترة والاشتراك', desc:'إدارة الفواتير وطرق الدفع', on:false, sensitive:true},
+        ]},
+      ]
+    },
+    support:{
+      name:'دعم فني', users:4,
+      desc:'قراءة بيانات المستخدمين والمساعدة في حل المشكلات دون صلاحيات حذف أو نشر.',
+      groups:[
+        {title:'المستخدمون', perms:[
+          {code:'users.view', label:'عرض المستخدمين', desc:'الاطلاع على قائمة المستخدمين وبياناتهم', on:true},
+          {code:'users.create', label:'إضافة مستخدمين', desc:'إنشاء حسابات جديدة ودعوتها', on:false},
+          {code:'users.edit', label:'تعديل بيانات المستخدمين', desc:'تحديث الأدوار، الأقسام، والحالة', on:false},
+          {code:'users.delete', label:'حذف المستخدمين', desc:'إزالة الحسابات نهائيًا من النظام', on:false, sensitive:true},
+        ]},
+        {title:'المحتوى', perms:[
+          {code:'content.publish', label:'نشر المحتوى', desc:'نشر أو إلغاء نشر أي عنصر محتوى', on:false},
+          {code:'content.edit', label:'تعديل المحتوى', desc:'تحرير المقالات والصفحات', on:false},
+        ]},
+        {title:'النظام', perms:[
+          {code:'system.settings', label:'إعدادات النظام', desc:'تعديل الإعدادات العامة والتكاملات', on:false, sensitive:true},
+          {code:'system.billing', label:'الفوترة والاشتراك', desc:'إدارة الفواتير وطرق الدفع', on:false, sensitive:true},
+        ]},
+      ]
+    },
+    member:{
+      name:'مستخدم عادي', users:5,
+      desc:'وصول أساسي للاطلاع على المحتوى العام فقط دون أي صلاحيات إدارية.',
+      groups:[
+        {title:'المستخدمون', perms:[
+          {code:'users.view', label:'عرض المستخدمين', desc:'الاطلاع على قائمة المستخدمين وبياناتهم', on:false},
+          {code:'users.create', label:'إضافة مستخدمين', desc:'إنشاء حسابات جديدة ودعوتها', on:false},
+          {code:'users.edit', label:'تعديل بيانات المستخدمين', desc:'تحديث الأدوار، الأقسام، والحالة', on:false},
+          {code:'users.delete', label:'حذف المستخدمين', desc:'إزالة الحسابات نهائيًا من النظام', on:false, sensitive:true},
+        ]},
+        {title:'المحتوى', perms:[
+          {code:'content.publish', label:'نشر المحتوى', desc:'نشر أو إلغاء نشر أي عنصر محتوى', on:false},
+          {code:'content.edit', label:'تعديل المحتوى', desc:'تحرير المقالات والصفحات', on:false},
+        ]},
+        {title:'النظام', perms:[
+          {code:'system.settings', label:'إعدادات النظام', desc:'تعديل الإعدادات العامة والتكاملات', on:false, sensitive:true},
+          {code:'system.billing', label:'الفوترة والاشتراك', desc:'إدارة الفواتير وطرق الدفع', on:false, sensitive:true},
+        ]},
+      ]
+    },
+  };
+
+  let selectedRole = 'super';
+
+  function renderRoleList(){
+    const list = document.getElementById('roleList');
+    list.innerHTML = Object.keys(rolesData).map(key=>{
+      const r = rolesData[key];
+      return `<div class="role-card ${key===selectedRole?'selected':''}" data-role="${key}">
+        <div class="rc-top">
+          <span class="rc-name">${r.name}</span>
+          <span class="rc-count">${r.users} مستخدم</span>
+        </div>
+        <p class="rc-desc">${r.desc}</p>
+      </div>`;
+    }).join('');
+  }
+
+  function renderMatrix(){
+    const r = rolesData[selectedRole];
+    document.getElementById('matrixTitle').textContent = r.name;
+    document.getElementById('matrixDesc').textContent = r.desc;
+    const body = document.getElementById('matrixBody');
+    body.innerHTML = r.groups.map(g=>{
+      const rows = g.perms.map(p=>{
+        return `<div class="perm-row ${p.on?'on':''}" data-code="${p.code}">
+          <span class="perm-dot"></span>
+          <div class="perm-info">
+            <span class="perm-label">${p.label}</span>
+            <span class="perm-code">${p.code}</span>
+            ${p.sensitive?'<span class="perm-sensitive">حساس</span>':''}
+            <div class="perm-desc">${p.desc}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${p.on?'checked':''} data-code="${p.code}">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+        </div>`;
+      }).join('');
+      return `<div class="perm-group"><div class="perm-group-title">${g.title}</div>${rows}</div>`;
+    }).join('');
+  }
+
+  document.getElementById('roleList').addEventListener('click', e=>{
+    const card = e.target.closest('.role-card');
+    if(!card) return;
+    selectedRole = card.dataset.role;
+    renderRoleList();
+    renderMatrix();
+  });
+
+  document.getElementById('matrixBody').addEventListener('change', e=>{
+    if(e.target.type !== 'checkbox') return;
+    const code = e.target.dataset.code;
+    const r = rolesData[selectedRole];
+    r.groups.forEach(g=>{
+      g.perms.forEach(p=>{
+        if(p.code===code) p.on = e.target.checked;
+      });
+    });
+    const row = e.target.closest('.perm-row');
+    row.classList.toggle('on', e.target.checked);
+  });
+
+  document.getElementById('saveRole').addEventListener('click', ()=>{
+    showToast(`تم حفظ صلاحيات «${rolesData[selectedRole].name}»`);
+  });
+  document.getElementById('resetRole').addEventListener('click', ()=>{
+    renderMatrix();
+    showToast('تمت استعادة الإعدادات الافتراضية');
+  });
+
+  /* ---------------- navigation ---------------- */
+  document.querySelectorAll('.nav-item[data-view]').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById(item.dataset.view).classList.add('active');
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+
+  document.getElementById('menuToggle').addEventListener('click', ()=>{
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  /* ---------------- init ---------------- */
+  renderTable();
+  renderRoleList();
+  renderMatrix();
+})();
+</script>
+</body>
+</html>
